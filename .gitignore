@@ -1,0 +1,16 @@
+# Subdir.
+src/log/
+src/conf/arch
+
+# Logfiles.
+*.log
+*.zip
+*.txt
+
+# Environ
+__pycache__/
+.env/
+.venv/
+
+env/
+venv/

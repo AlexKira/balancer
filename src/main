@@ -1,0 +1,163 @@
+#! /bin/bash
+
+# Ensure the script is executed with root privileges.
+# Exit if the user is not root.
+# Load CLI arguments and optional log line number.
+# Validate and sanitize LOG_NUMBER.
+# Load environment from the configuration file.
+# Provide command-based control for the balancer subsystem:
+#   - Start/stop balancer
+#   - View processes and timers
+#   - Truncate logs
+#   - Display INPUT/FORWARD logs with optional tailing
+#   - Apply/reset firewall & NAT rules
+#   - Show firewall/NAT rule status
+set -e
+
+if [ "$(id -u)" != 0 ]; then
+  echo "Access denied. Run the script as 'root' user."
+  exit 1
+fi
+
+ARGS="$1 $2"
+LOG_NUMBER=0
+
+if [ "$#" -ge 3 ]; then
+  LOG_NUMBER="$3"
+fi
+
+if ! [[ "$LOG_NUMBER" =~ ^[0-9]+$ ]]; then
+  LOG_NUMBER=0
+fi
+
+function help() {
+  echo "
+###################################################################################
+#                                                                                 #
+#                             Utility management                                  #
+#                                                                                 #
+###################################################################################
+#                                                                                 # 
+# [-up]          - Apply sysctl settings for balancer.                            #
+# [-dw]          - Restore default sysctl settings.                               #
+# [-ps]          - Show process list.                                             #
+#                                                                                 #
+# [-t]           - Truncate all log files.                                        #
+#                                                                                 #
+# [-l -in]       - Show INPUT chain balancer log.                                 #
+# [-l -in][num]  - Show the last N lines of the balancer log INPUT chain.         #
+# [-l -fw]       - Show FORWARD chain balancer log.                               #
+# [-l -fw][num]  - Show the last N lines of the balancer log FORWARD chain.       #
+#                                                                                 #
+# [-ra]          - Add Nat and Firewall rules.                                    #
+# [-rc]          - Reset Nat and Firewall rules to default policy.                #
+#                                                                                 #
+# [-fr]          - Information about firewall rules.                              #
+# [-n]           - Information about NAT rules.                                   #
+#                                                                                 #  
+###################################################################################
+"
+}
+
+
+function main() {
+
+    WORKDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+    if [ ! -f "$WORKDIR/conf/set" ]; then
+        echo "error: file 'set' not found"
+        exit 1
+    fi
+
+    source "$WORKDIR/conf/set"
+    SYSCTL_FILE=("$WORKDIR/conf/sysctl/"*.conf)
+
+    if [ ! -f $PATH_EXTENSION_RULES ]; then
+        echo "error: extension 'rules' not found"
+        echo "error: path environment 'PATH_EXTENSION_RULES' not found"
+        exit 1
+    fi
+
+    if [ ! -f $PATH_EXTENSION_RLOG ]; then
+        echo "error: extension 'rsyslog' not found"
+        echo "error: path environment 'PATH_EXTENSION_RLOG' not found"
+        exit 1
+    fi
+
+    # Apply sysctl settings for balancer.
+    if [ "$ARGS" == "-up " ]; then
+        if [ ! -f "$PATH_FILE_SYSCTL" ]; then
+            cp -rf "$SYSCTL_FILE" $PATH_FILE_SYSCTL
+        fi
+
+        /usr/sbin/sysctl -p $PATH_FILE_SYSCTL
+
+    # Restore default sysctl settings.
+    elif [ "$ARGS" == "-dw " ]; then
+        SYSCTL_FILE_NAME=$(basename "$SYSCTL_FILE")
+        ARH_DIR="$WORKDIR/conf/arch/$(date +'%d_%m_%Y_%H_%M')"
+
+        mkdir -p $ARH_DIR
+        mv $PATH_FILE_SYSCTL "$ARH_DIR/$SYSCTL_FILE_NAME"
+
+        /usr/sbin/sysctl --system
+
+    # Show process list.
+    elif [ "$ARGS" == "-ps " ]; then
+        echo "INFO: LIST TIMERS LOGROTATE."
+        systemctl list-timers | grep logrotate
+        echo
+
+        echo "INFO: STATUS SERVICE."
+        systemctl status logrotate.timer
+        echo
+        systemctl status rsyslog.service
+
+    # Truncate all log files.
+    elif [ "$ARGS" == "-t " ]; then
+        truncate -s 0 "$WORKDIR/log/$LOGGER_NAME_TABLE_INPUT.log"
+        truncate -s 0 "$WORKDIR/log/$LOGGER_NAME_TABLE_FORWARD.log"
+
+    # Show INPUT chain balancer log.
+    elif [ "$ARGS" == "-l -in" ] && [ "$LOG_NUMBER" -gt 0 ]; then
+        tail -n "$LOG_NUMBER" "$WORKDIR/log/$LOGGER_NAME_TABLE_INPUT.log"
+
+    # Show the last N lines of the balancer log INPUT chain.
+    elif [ "$ARGS" == "-l -in" ] && [ "$LOG_NUMBER" -eq 0 ]; then
+        cat "$WORKDIR/log/$LOGGER_NAME_TABLE_INPUT.log"
+
+    # Show FORWARD chain balancer log.
+    elif [ "$ARGS" == "-l -fw" ] && [ "$LOG_NUMBER" -gt 0 ]; then
+        tail -n "$LOG_NUMBER" "$WORKDIR/log/$LOGGER_NAME_TABLE_FORWARD.log"
+
+    # Show the last N lines of the balancer log FORWARD chain.
+    elif [ "$ARGS" == "-l -fw" ] && [ "$LOG_NUMBER" -eq 0 ]; then
+        cat "$WORKDIR/log/$LOGGER_NAME_TABLE_FORWARD.log"
+
+    # Add Nat and Firewall rules.
+    elif [ "$ARGS" == "-ra " ]; then
+        export CLEAR_RULES="false"  
+        python3 $PATH_EXTENSION_RULES
+        python3 $PATH_EXTENSION_RLOG
+    
+    # Reset Nat and Firewall rules to default policy. 
+    elif [ "$ARGS" == "-rc " ]; then
+        export CLEAR_RULES="true"
+        python3 $PATH_EXTENSION_RLOG
+        python3 $PATH_EXTENSION_RULES
+
+    # Information about firewall rules.
+    elif [ "$ARGS" == "-fr " ]; then
+        iptables -L -n -v
+
+    # Information about NAT rules. 
+    elif [ "$ARGS" == "-n " ]; then
+        iptables -t nat -L -n -v
+
+    else
+        help
+        exit 1
+    fi
+}
+
+main

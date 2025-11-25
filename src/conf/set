@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# ------------------------------
+# EXTENSIONS
+# ------------------------------
+PATH_EXTENSION_RULES="extension/rules.py"   # Python script to apply firewall/NAT rules
+PATH_EXTENSION_RLOG="extension/rsyslog.py" # Python script to configure logging
+
+# ------------------------------
+# NETWORK SETTINGS
+# ------------------------------
+export LOCALHOST="x.x.x.x"           # Local IP used for SNAT and forwarding rules
+
+# ------------------------------
+# SYSCTL SETTINGS
+# ------------------------------
+export PATH_FILE_SYSCTL="/etc/sysctl.d/brg_sysctl.conf" # Sysctl configuration for balancer
+export LIMIT_LOG_SEC="10"                  # Rate limit for logging (packets per second)
+
+# ------------------------------
+# ALLOWED IP ADDRESSES
+# ------------------------------
+# SSH access sources: format IP:PORT, multiple entries separated by comma
+# Example: 127.0.0.1:22, 192.168.1.0:22
+export SSH_HOST_TCP_IN_0="x.x.x.x:22"       # Allowed SSH sources for INPUT chain
+
+# Balancer cores for forwarding traffic: format IP:PORT, multiple entries separated by comma
+# Example: 10.124.245.18:49548, 192.168.1.129:51820
+export BRGNETUSE_CORES_UDP_FW_0="x.x.x.x:x" # UDP cores for FORWARD chain
+
+# ------------------------------
+# LOGGER CONFIGURATION
+# ------------------------------
+export LOGGER_NAME_TABLE_INPUT="brgcore_in"   # Log prefix for INPUT chain
+export LOGGER_NAME_TABLE_FORWARD="brgcore_fw" # Log prefix for FORWARD chain

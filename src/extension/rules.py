@@ -8,19 +8,6 @@ import subprocess
 
 UTILITY: str = "/usr/sbin/iptables"
 
-ENV_HOSTS: list[str] = [
-    "SSH_HOST_TCP_IN_0",
-    "BRGNETUSE_CORES_UDP_FW_0",
-]
-
-_STATIC_VARIBLES: list[str] = [
-    "LOCALHOST",
-    "LOGGER_NAME_TABLE_INPUT",
-    "LOGGER_NAME_TABLE_FORWARD",
-    "LIMIT_LOG_SEC",
-]
-
-
 def is_valid_ipv4_port(ip_port_string: str) -> bool:
     """
     Check if a string is a valid IPv4:PORT pair.
@@ -42,41 +29,44 @@ def is_valid_ipv4_port(ip_port_string: str) -> bool:
 
 def get_allow_ips() -> tuple[dict[str, list[str]], dict[str, str]]:
     """
-    Get and validate IPs and ports from environment variables.
+    Get and validate IPs and ports from environment variables dynamically.
 
     Returns:
         tuple[dict[str, list[str]], dict[str, str]]
-
-    Raises:
-        KeyError, ValueError
     """
-    allowIPs: dict[str, list[str]] = dict()
-    open_port: dict[str, str] = dict()
-    static_vars: dict[str, str] = dict()
+    allowIPs: dict[str, list[str]] = {}
+    static_vars: dict[str, str] = {}
 
-    for key in ENV_HOSTS:
-        value = os.getenv(key)
-        if value is None:
-            raise KeyError(f"error: environment variable '{key}' is not set")
+    HOST_KEYWORDS = [
+        "TCP_IN", 
+        "TCP_FW", 
+        "UDP_IN", 
+        "UDP_FW"
+    ]
 
-        ipList: list[str] = list()
-        ipList = value.strip().split(", ")
-        
-        if not all(is_valid_ipv4_port(x) for x in ipList):
-            raise ValueError(
-                f"error: environment variable '{key}' contains invalid entries. "
-                f"Expected IP:PORT (e.g., 192.168.1.5:51820). "
-                f"Full value: '{value}'"
-            )
+    STATIC_KEYWORDS = [
+        "LOCALHOST",
+        "LOG_SEC", 
+        "TABLE_INPUT", 
+        "TABLE_FORWARD",
+    ]
 
-        allowIPs[key] = ipList
-    
-    for key in _STATIC_VARIBLES:
-        value = os.getenv(key)
-        if value is None:
-            raise KeyError(f"error: environment variable '{key}' is not set")
-        
-        static_vars[key] = value
+    for key, val in os.environ.items():
+        cur_key = key.strip()
+        cur_val = val.strip()
+
+        if any(k in cur_key for k in STATIC_KEYWORDS):
+            static_vars[cur_key] = cur_val
+            
+        if any(k in cur_key for k in HOST_KEYWORDS):
+            ipList = [x.strip() for x in cur_val.split(",")]
+            
+            if not all(is_valid_ipv4_port(x) for x in ipList):
+                raise ValueError(
+                    f"error: environment variable '{cur_key}' contains invalid entries. "
+                    f"Expected IP:PORT (e.g., 192.168.1.5:51820). Full value: '{cur_val}'"
+                )
+            allowIPs[cur_key] = ipList
 
     return allowIPs, static_vars
 

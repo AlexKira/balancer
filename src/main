@@ -86,19 +86,18 @@ function main() {
 
     # Apply sysctl settings for balancer.
     if [ "$ARGS" == "-up " ]; then
-        if [ ! -f "$PATH_FILE_SYSCTL" ]; then
-            cp -rf "$SYSCTL_FILE" $PATH_FILE_SYSCTL
+        if [ ! -f "/etc/sysctl.d/$FILENAME_SYSCTL" ]; then
+            cp -rf "$SYSCTL_FILE" "/etc/sysctl.d/$FILENAME_SYSCTL"
         fi
 
-        /usr/sbin/sysctl -p $PATH_FILE_SYSCTL
+        /usr/sbin/sysctl -p /etc/sysctl.d/*.conf
 
     # Restore default sysctl settings.
     elif [ "$ARGS" == "-dw " ]; then
-        SYSCTL_FILE_NAME=$(basename "$SYSCTL_FILE")
         ARH_DIR="$WORKDIR/conf/arch/$(date +'%d_%m_%Y_%H_%M')"
 
         mkdir -p $ARH_DIR
-        mv $PATH_FILE_SYSCTL "$ARH_DIR/$SYSCTL_FILE_NAME"
+        mv "/etc/sysctl.d/$FILENAME_SYSCTL" "$ARH_DIR/$FILENAME_SYSCTL"
 
         /usr/sbin/sysctl --system
 

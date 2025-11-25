@@ -3,33 +3,40 @@
 # ------------------------------
 # EXTENSIONS
 # ------------------------------
-PATH_EXTENSION_RULES="extension/rules.py"   # Python script to apply firewall/NAT rules
-PATH_EXTENSION_RLOG="extension/rsyslog.py" # Python script to configure logging
+PATH_EXTENSION_RULES="extension/rules.py"  # Python extension for firewall/NAT rules
+PATH_EXTENSION_RLOG="extension/rsyslog.py" # Python extension for logging setup
 
 # ------------------------------
 # NETWORK SETTINGS
 # ------------------------------
-export LOCALHOST="x.x.x.x"           # Local IP used for SNAT and forwarding rules
+export LOCALHOST="127.0.0.1"               # Local IP used for SNAT/forwarding rules
 
 # ------------------------------
 # SYSCTL SETTINGS
 # ------------------------------
-export PATH_FILE_SYSCTL="/etc/sysctl.d/brg_sysctl.conf" # Sysctl configuration for balancer
-export LIMIT_LOG_SEC="10"                  # Rate limit for logging (packets per second)
+export FILENAME_SYSCTL="brg_sysctl.conf"   # Sysctl configuration file
+export LIMIT_LOG_SEC="10"                  # Logging rate limit (packets/sec)
 
 # ------------------------------
 # ALLOWED IP ADDRESSES
 # ------------------------------
-# SSH access sources: format IP:PORT, multiple entries separated by comma
-# Example: 127.0.0.1:22, 192.168.1.0:22
-export SSH_HOST_TCP_IN_0="x.x.x.x:22"       # Allowed SSH sources for INPUT chain
+# SSH access sources (INPUT chain)
+# Variable format: <SERVICE>_<PROTO>_<CHAIN>_<BIT>
+# Example: "0.0.0.0:22, 192.0.0.0:24"
+export SSH_HOST_TCP_IN_0="x.x.x.x:x"
 
-# Balancer cores for forwarding traffic: format IP:PORT, multiple entries separated by comma
-# Example: 10.124.245.18:49548, 192.168.1.129:51820
-export BRGNETUSE_CORES_UDP_FW_0="x.x.x.x:x" # UDP cores for FORWARD chain
+# Balancer cores for forwarding traffic (FORWARD chain)
+# Variable format: <SERVICE>_<PROTO>_<CHAIN>_<BIT>
+# Example: BRGNETUSE_CORES_UDP_FW_0
+# IP addresses replaced with example IPs
+# Example: "10.0.0.1:49548, 10.0.0.2:40548, 10.0.0.3:51820"
+export BRGNETUSE_CORES_UDP_FW_0="x.x.x.x:x"
 
 # ------------------------------
 # LOGGER CONFIGURATION
 # ------------------------------
-export LOGGER_NAME_TABLE_INPUT="brgcore_in"   # Log prefix for INPUT chain
-export LOGGER_NAME_TABLE_FORWARD="brgcore_fw" # Log prefix for FORWARD chain
+# Variable format: LOGGER_NAME_<CHAIN>
+# <CHAIN> can be TABLE_INPUT or TABLE_FORWARD
+# Value can be any descriptive name
+export LOGGER_NAME_TABLE_INPUT="brgcore_in"
+export LOGGER_NAME_TABLE_FORWARD="brgcore_fw"

@@ -291,7 +291,7 @@ def main():
             for cmd in cmd_clear_iptable(True):
                 run(cmd)
         
-            raise SystemExit(f"info: {UTILITY} reset, base policies applied")
+            return print(f"info: {UTILITY} reset, base policies applied")
 
         alwIPs, static_vars = get_allow_ips()
 
@@ -369,7 +369,7 @@ def main():
                 
         print("info: rules added")
     except Exception as err:
-        print(err)
+        print(f"error: {err}")
         sys.exit(1)
 
 

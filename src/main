@@ -86,20 +86,32 @@ function main() {
 
     # Apply sysctl settings for balancer.
     if [ "$ARGS" == "-up " ]; then
+
+        echo "info: $(date '+%F | %T') | Start applying sysctl settings for balancer"
+
         if [ ! -f "/etc/sysctl.d/$FILENAME_SYSCTL" ]; then
             cp -rf "$SYSCTL_FILE" "/etc/sysctl.d/$FILENAME_SYSCTL"
         fi
 
         /usr/sbin/sysctl -p /etc/sysctl.d/*.conf
 
+        echo "info: $(date '+%F | %T') | Finished applying sysctl settings for balancer"
+        echo
+    
     # Restore default sysctl settings.
     elif [ "$ARGS" == "-dw " ]; then
+
+        echo "info: $(date '+%F | %T') | Start restoring default sysctl settings for balancer"
+
         ARH_DIR="$WORKDIR/conf/arch/$(date +'%d_%m_%Y_%H_%M')"
 
         mkdir -p $ARH_DIR
         mv "/etc/sysctl.d/$FILENAME_SYSCTL" "$ARH_DIR/$FILENAME_SYSCTL"
 
         /usr/sbin/sysctl --system
+
+        echo "info: $(date '+%F | %T') | Finished restoring default sysctl settings for balancer"
+        echo
 
     # Show process list.
     elif [ "$ARGS" == "-ps " ]; then
@@ -135,15 +147,27 @@ function main() {
 
     # Add Nat and Firewall rules.
     elif [ "$ARGS" == "-ra " ]; then
+
+        echo "info: $(date '+%F | %T') | Start applying NAT and Firewall rules"
+
         export CLEAR_RULES="false"  
         python3 $PATH_EXTENSION_RULES
         python3 $PATH_EXTENSION_RLOG
-    
+
+        echo "info: $(date '+%F | %T') | Finished applying NAT and Firewall rules"
+        echo
+
     # Reset Nat and Firewall rules to default policy. 
     elif [ "$ARGS" == "-rc " ]; then
+
+        echo "info: $(date '+%F | %T') | Start resetting NAT and Firewall rules to default policy"
+
         export CLEAR_RULES="true"
         python3 $PATH_EXTENSION_RLOG
         python3 $PATH_EXTENSION_RULES
+
+        echo "info: $(date '+%F | %T') | Finished resetting NAT and Firewall rules"
+        echo
 
     # Information about firewall rules.
     elif [ "$ARGS" == "-fr " ]; then

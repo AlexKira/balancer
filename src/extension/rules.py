@@ -290,8 +290,9 @@ def main():
         if clearRules == "true":
             for cmd in cmd_clear_iptable(True):
                 run(cmd)
-        
-            return print(f"info: {UTILITY} reset, base policies applied")
+
+            print(f"info: {UTILITY} reset, base policies applied")
+            return 
 
         alwIPs, static_vars = get_allow_ips()
 

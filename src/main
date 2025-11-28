@@ -93,6 +93,10 @@ function main() {
             cp -rf "$SYSCTL_FILE" "/etc/sysctl.d/$FILENAME_SYSCTL"
         fi
 
+	if modinfo nf_conntrack >/dev/null 2>&1; then
+            modprobe nf_conntrack
+        fi
+
         /usr/sbin/sysctl -p /etc/sysctl.d/*.conf
 
         echo "info: $(date '+%F | %T') | Finished applying sysctl settings for balancer"

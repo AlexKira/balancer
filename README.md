@@ -33,3 +33,5 @@ The utility provides commands for:
 - resetting network policies;
 - inspecting firewall and NAT configuration;
 - reviewing traffic logs.
+
+Documentation and examples are being expanded.
